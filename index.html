@@ -20,7 +20,7 @@
       <section class="view active" id="editorView">
         <div class="welcome"><div><p class="eyebrow">YOUR CREATIVE WORKSPACE</p><h1>Luau <em>Editor</em></h1><p class="muted">Write, organise and prepare scripts for your own Roblox Studio experiences.</p></div><button class="primary" id="saveBtn">Save script <span>↗</span></button></div>
         <div class="editor-card">
-          <div class="editor-toolbar"><div class="file-tab"><span class="file-icon">◇</span><input id="scriptName" value="NewScript.lua" aria-label="Script name"></div><div class="toolbar-right"><span class="language-tag">LUAU</span><button class="quiet-btn" id="copyBtn">Copy</button></div></div>
+          <div class="editor-toolbar"><div class="file-tab"><span class="file-icon">◇</span><input id="scriptName" value="NewScript.lua" aria-label="Script name"></div><div class="toolbar-right"><span class="language-tag">LUAU</span><button class="quiet-btn" id="copyBtn">Copy</button><button class="quiet-btn" id="importBtn">Import</button><button class="quiet-btn" id="exportBtn">Export</button><input id="fileInput" type="file" accept=".lua,.luau,.txt,.json" hidden><input id="backupInput" type="file" accept=".json" hidden></div></div>
           <textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Luau code editor" placeholder="-- Start writing your Luau script here...">-- Welcome to Delta Lab
 -- Write scripts for your own Roblox Studio projects.
 
@@ -32,7 +32,7 @@ print(message)
         </div>
         <div class="below-grid"><article class="info-card"><div class="card-icon">⌘</div><div><b>Studio workflow</b><p>Copy your code into your own Roblox Studio experience to test it.</p></div></article><article class="info-card"><div class="card-icon">◈</div><div><b>Private by default</b><p>Your saved scripts stay in this browser on this device.</p></div></article></div>
       </section>
-      <section class="view" id="libraryView"><div class="section-heading"><div><p class="eyebrow">YOUR FILES</p><h1>Script <em>library</em></h1><p class="muted">Saved locally in this browser.</p></div><button class="primary" id="libraryNew">＋ New script</button></div><div id="scriptList" class="script-list"></div></section>
+      <section class="view" id="libraryView"><div class="section-heading"><div><p class="eyebrow">YOUR FILES</p><h1>Script <em>library</em></h1><p class="muted">Saved locally in this browser.</p></div><button class="primary" id="libraryNew">＋ New script</button></div><div class="library-actions"><button class="quiet-btn" id="backupBtn">Export backup</button><button class="quiet-btn" id="importLibraryBtn">Import backup</button></div><div id="scriptList" class="script-list"></div></section>
       <section class="view" id="consoleView"><div class="section-heading"><div><p class="eyebrow">DEVELOPMENT OUTPUT</p><h1>Test <em>console</em></h1><p class="muted">Basic editor checks. This is not a Roblox runtime.</p></div><button class="quiet-btn" id="clearConsole">Clear output</button></div><div class="console-card"><div class="console-head"><span class="status-dot"></span> LOCAL CHECKS <span class="muted">· no code execution</span></div><div id="consoleOutput" class="console-output"><p class="console-muted">Ready. Choose “Check script” in the editor to inspect basic formatting.</p></div></div></section>
       <footer>DELTA LAB <span>·</span> Built for learning Luau and Roblox Studio development</footer>
     </main>
