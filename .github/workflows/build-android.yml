@@ -41,6 +41,11 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm install
 
+      - name: Prepare web assets
+        run: |
+          mkdir -p www
+          cp index.html styles.css app.js manifest.webmanifest sw.js www/
+
       - name: Generate Android project
         run: npx cap add android
 
