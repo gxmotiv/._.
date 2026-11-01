@@ -44,7 +44,7 @@ jobs:
       - name: Prepare web assets
         run: |
           mkdir -p www
-          cp index.html styles.css app.js manifest.webmanifest sw.js www/
+          cp index.html styles.css manifest.webmanifest sw.js www/\n          npm run build
 
       - name: Generate Android project
         run: npx cap add android
