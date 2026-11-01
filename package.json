@@ -16,7 +16,8 @@
     "@codemirror/commands": "^6.8.1",
     "@codemirror/language": "^6.11.0",
     "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.36.5"
+    "@codemirror/view": "^6.36.5",
+    "@fazelstudio/codemirror-lang-luau": "^0.1.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",
