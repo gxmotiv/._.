@@ -1,29 +1,82 @@
+import {EditorState} from "@codemirror/state";
+import {EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection} from "@codemirror/view";
+import {defaultKeymap, history, historyKeymap, indentWithTab} from "@codemirror/commands";
+import {StreamLanguage, syntaxHighlighting, defaultHighlightStyle} from "@codemirror/language";
+import {autocompletion} from "@codemirror/autocomplete";
+import {Filesystem, Directory, Encoding} from "@capacitor/filesystem";
+import {Capacitor} from "@capacitor/core";
+
 const $=id=>document.getElementById(id);
-const editor=$('codeEditor'),nameInput=$('scriptName');
-const STORAGE_KEY='deltaLabScripts';
-let scripts=[];
-try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');scripts=Array.isArray(saved)?saved.filter(s=>s&&typeof s.name==='string'&&typeof s.code==='string'):[]}catch{scripts=[]}
-let activeId=null;
-function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(scripts));$('saveState').textContent='Saved locally'}catch{$('saveState').textContent='Storage full — export backup'}}
-function setView(view){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(view+'View').classList.add('active');document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('pageName').textContent=view==='editor'?'Editor':view==='library'?'Script library':'Console';$('sidebar').classList.remove('open');if(view==='library')renderLibrary()}
-document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
-$('menuBtn').onclick=()=>$('sidebar').classList.toggle('open');
-function fresh(){activeId=null;nameInput.value='NewScript.lua';editor.value='-- New Luau script\n\n';updateLineCount();$('saveState').textContent='Unsaved changes';setView('editor');editor.focus()}
-$('newBtn').onclick=fresh;$('libraryNew').onclick=fresh;
-function updateLineCount(){$('lineCount').textContent=editor.value.split('\n').length}
-editor.addEventListener('input',()=>{updateLineCount();$('saveState').textContent='Unsaved changes'});
-$('saveBtn').onclick=save;
-function save(){const name=nameInput.value.trim()||'Untitled.lua';if(activeId){const item=scripts.find(s=>s.id===activeId);if(item){item.name=name;item.code=editor.value;item.updated=Date.now()}}else{activeId=String(Date.now())+'-'+Math.random().toString(36).slice(2,7);scripts.unshift({id:activeId,name,code:editor.value,updated:Date.now()})}persist();renderLibrary()}
-function download(filename,content,type='text/plain'){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function safeFilename(name){return (name||'script').replace(/[^a-z0-9._-]/gi,'_').replace(/\.(lua|luau)$/i,'')||'script'}
-function exportCurrent(){download(safeFilename(nameInput.value)+'.luau',editor.value,'text/plain;charset=utf-8');$('saveState').textContent='Script exported'}
-function exportBackup(){download('delta-lab-backup.json',JSON.stringify({format:'delta-lab-backup',version:1,scripts},null,2),'application/json');$('saveState').textContent='Backup exported'}
-function importFile(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const text=String(reader.result||'');if(file.name.toLowerCase().endsWith('.json')){const parsed=JSON.parse(text);const incoming=Array.isArray(parsed)?parsed:parsed.scripts;if(!Array.isArray(incoming))throw new Error('JSON backup must contain a scripts array');let added=0;incoming.forEach(s=>{if(s&&typeof s.name==='string'&&typeof s.code==='string'){scripts.unshift({id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),name:s.name,code:s.code,updated:Date.now()});added++}});persist();renderLibrary();$('saveState').textContent=added+' scripts imported'}else{activeId=null;nameInput.value=file.name;editor.value=text;updateLineCount();$('saveState').textContent='File imported — save to library';setView('editor')}}catch(err){$('saveState').textContent='Import failed: '+err.message}};reader.readAsText(file)}
-function renderLibrary(){const host=$('scriptList');host.replaceChildren();if(!scripts.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No saved scripts yet. Create or import your first script.';host.append(empty);return}scripts.forEach(s=>{const row=document.createElement('div');row.className='script-row';const icon=document.createElement('span');icon.className='file-icon';icon.textContent='◇';const meta=document.createElement('div');meta.className='script-meta';const title=document.createElement('b');title.textContent=s.name;const sub=document.createElement('p');sub.textContent=s.code.split('\n').length+' lines · '+new Date(s.updated||Date.now()).toLocaleDateString();meta.append(title,sub);const open=document.createElement('button');open.textContent='Open';open.onclick=()=>{activeId=s.id;nameInput.value=s.name;editor.value=s.code;updateLineCount();setView('editor');$('saveState').textContent='Saved locally'};const del=document.createElement('button');del.textContent='Delete';del.onclick=()=>{if(!confirm('Delete '+s.name+'?'))return;scripts=scripts.filter(x=>x.id!==s.id);persist();renderLibrary()};row.append(icon,meta,open,del);host.append(row)})}
-$('copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(editor.value);$('saveState').textContent='Copied to clipboard'}catch{$('saveState').textContent='Clipboard unavailable'}};
-$('importBtn').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{importFile(e.target.files[0]);e.target.value=''};
-$('exportBtn').onclick=exportCurrent;$('backupBtn').onclick=exportBackup;
-$('importLibraryBtn').onclick=()=>$('backupInput').click();$('backupInput').onchange=e=>{importFile(e.target.files[0]);e.target.value=''};
-$('clearConsole').onclick=()=>$('consoleOutput').textContent='Output cleared.';
-function checkScript(){setView('console');const out=$('consoleOutput');out.replaceChildren();const lines=editor.value.split('\n');const add=(msg,type='good')=>{const p=document.createElement('p');p.className='console-line '+type;p.textContent=msg;out.append(p)};add('Checking '+(nameInput.value||'untitled')+'…');add('Lines: '+lines.length);const opens=(editor.value.match(/\b(function|then|do|repeat)\b/g)||[]).length;const closes=(editor.value.match(/\b(end|until)\b/g)||[]).length;if(opens!==closes)add('Notice: block keyword counts differ (open '+opens+', close '+closes+'). This simple check can produce false positives.','warn');else add('Block keyword counts match; this does not prove syntax is valid.');if(editor.value.includes('loadstring'))add('Notice: loadstring detected. This editor does not execute it.','warn');add('No code was executed. Use Roblox Studio to test scripts in your own experience.')}
-const run=document.createElement('button');run.className='quiet-btn';run.textContent='Check script';run.onclick=checkScript;document.querySelector('.toolbar-right').prepend(run);updateLineCount();
+const STORAGE_KEY="deltaLabScriptsV2";
+const native=Capacitor.isNativePlatform();
+let scripts=[],tabs=[],activeTabId=null,editorView=null;
+const uid=()=>Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
+const starter="-- Welcome to Delta Lab\n-- Write scripts for your own Roblox Studio experiences.\n\nlocal message = \"Hello, Roblox!\"\nprint(message)\n";
+const luau=StreamLanguage.define({
+ startState:()=>({block:0}),
+ token(stream,state){
+  if(stream.eatSpace())return null;
+  if(stream.match("--[[",false)){stream.match("--[[");state.block=1;return "comment"}
+  if(state.block){if(stream.skipTo("]]")){stream.match("]]");state.block=0}else stream.skipToEnd();return "comment"}
+  if(stream.match("--")){stream.skipToEnd();return "comment"}
+  if(stream.match(/"(?:\\.|[^"\\])*"?|'(?:\\.|[^'\\])*'?/))return "string";
+  if(stream.match(/\b(?:and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|continue|export|type)\b/))return "keyword";
+  if(stream.match(/\b(?:print|warn|error|assert|pairs|ipairs|next|select|tonumber|tostring|type|typeof|require|game|workspace|script|task|math|string|table|coroutine|Instance|Vector3|CFrame|Color3|UDim2|Enum)\b/))return "builtin";
+  if(stream.match(/\b\d+(?:\.\d+)?\b/))return "number";
+  if(stream.match(/[A-Za-z_][\w]*/))return "variableName";
+  if(stream.match(/==|~=|<=|>=|\.\.\.?|[-+*/%^#=<>]/))return "operator";
+  stream.next();return null;
+ }
+});
+async function loadScripts(){
+ try{
+  if(native){const r=await Filesystem.readFile({path:"library/scripts.json",directory:Directory.Data,encoding:Encoding.UTF8});scripts=JSON.parse(r.data)||[]}
+  else scripts=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+  if(!Array.isArray(scripts))scripts=[];
+ }catch{scripts=[]}
+}
+async function persist(){
+ try{
+  const data=JSON.stringify(scripts);
+  if(native)await Filesystem.writeFile({path:"library/scripts.json",directory:Directory.Data,data,encoding:Encoding.UTF8,recursive:true});
+  else localStorage.setItem(STORAGE_KEY,data);
+  $("saveState").textContent="Saved on this device";
+ }catch(e){$("saveState").textContent="Save failed: "+(e.message||"storage unavailable")}
+}
+function activeTab(){return tabs.find(t=>t.id===activeTabId)}
+function mountEditor(){
+ const tab=activeTab();if(!tab)return;
+ if(editorView)editorView.destroy();
+ editorView=new EditorView({state:EditorState.create({doc:tab.code,extensions:[
+  lineNumbers(),history(),drawSelection(),highlightActiveLine(),luau,syntaxHighlighting(defaultHighlightStyle),
+  autocompletion(),keymap.of([indentWithTab,...defaultKeymap,...historyKeymap]),
+  EditorView.updateListener.of(u=>{if(u.docChanged){tab.code=u.state.doc.toString();$("saveState").textContent="Unsaved changes";updateLineCount()}}),
+  EditorView.theme({ "&":{height:"55vh",minHeight:"300px",backgroundColor:"#0d1421",color:"#c7d6eb",fontSize:"12px"},".cm-scroller":{overflow:"auto",fontFamily:"ui-monospace,monospace",lineHeight:"1.8"},".cm-gutters":{backgroundColor:"#0d1421",color:"#64748b",border:"none"},".cm-activeLine":{backgroundColor:"#172235"},".cm-activeLineGutter":{backgroundColor:"#172235"}})
+ ]}),parent:$("codeEditor")});
+ updateLineCount();
+}
+function updateLineCount(){const tab=activeTab();$("lineCount").textContent=tab?String((tab.code.match(/\n/g)||[]).length+1):"0"}
+function renderTabs(){
+ const bar=$("tabBar");bar.replaceChildren();
+ tabs.forEach(t=>{const b=document.createElement("button");b.className="editor-tab"+(t.id===activeTabId?" active":"");b.setAttribute("role","tab");b.setAttribute("aria-selected",String(t.id===activeTabId));b.textContent=t.name;b.onclick=()=>{if(activeTab())activeTab().code=editorView.state.doc.toString();activeTabId=t.id;renderTabs();mountEditor()};const x=document.createElement("span");x.textContent=" ×";x.onclick=e=>{e.stopPropagation();closeTab(t.id)};b.append(x);bar.append(b)});
+}
+function openTab(script){if(activeTab()&&editorView)activeTab().code=editorView.state.doc.toString();const t={id:uid(),scriptId:script.id||null,name:script.name||"Untitled.luau",code:script.code||""};tabs.push(t);activeTabId=t.id;renderTabs();mountEditor();$("scriptName").value=t.name}
+function closeTab(id){const i=tabs.findIndex(t=>t.id===id);if(i<0)return;tabs.splice(i,1);if(activeTabId===id)activeTabId=tabs[Math.max(0,i-1)]?.id||null;if(activeTab()){renderTabs();mountEditor();$("scriptName").value=activeTab().name}else{if(editorView){editorView.destroy();editorView=null}$("codeEditor").replaceChildren();renderTabs()}}
+function newScript(){openTab({name:"NewScript.luau",code:starter});$("saveState").textContent="New tab"}
+function saveCurrent(){const t=activeTab();if(!t)return; t.name=$("scriptName").value.trim()||"Untitled.luau";t.code=editorView.state.doc.toString();let item=scripts.find(s=>s.id===t.scriptId);if(!item){item={id:uid(),name:t.name,code:t.code,updated:Date.now()};scripts.unshift(item);t.scriptId=item.id}else Object.assign(item,{name:t.name,code:t.code,updated:Date.now()});persist();renderLibrary();renderTabs()}
+function setView(view){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(view+"View").classList.add("active");document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("pageName").textContent=view==="editor"?"Editor":view==="library"?"Script library":"Console";$("sidebar").classList.remove("open");if(view==="library")renderLibrary()}
+function renderLibrary(){const host=$("scriptList");host.replaceChildren();if(!scripts.length){const empty=document.createElement("div");empty.className="empty";empty.textContent="No saved scripts yet. Create or import your first script.";host.append(empty);return}scripts.forEach(s=>{const row=document.createElement("div");row.className="script-row";const meta=document.createElement("div");meta.className="script-meta";const title=document.createElement("b");title.textContent=s.name;const sub=document.createElement("p");sub.textContent=(s.code.match(/\n/g)||[]).length+1+" lines";meta.append(title,sub);const open=document.createElement("button");open.textContent="Open";open.onclick=()=>{openTab(s);setView("editor")};const del=document.createElement("button");del.textContent="Delete";del.onclick=async()=>{if(!confirm("Delete "+s.name+"?"))return;scripts=scripts.filter(x=>x.id!==s.id);await persist();renderLibrary()};row.append(meta,open,del);host.append(row)})}
+function download(name,data,type="text/plain"){const a=document.createElement("a"),url=URL.createObjectURL(new Blob([data],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+async function exportCurrent(){const t=activeTab();if(!t)return;const text=editorView.state.doc.toString();if(native){$("saveState").textContent="Saved in app storage; use Export backup to create a portable file";return}download(t.name,text,"text/plain;charset=utf-8")}
+function exportBackup(){download("delta-lab-backup.json",JSON.stringify({format:"delta-lab-backup",version:2,scripts},null,2),"application/json")}
+async function importFile(file){if(!file)return;try{const text=await file.text();if(file.name.toLowerCase().endsWith(".json")){const parsed=JSON.parse(text),incoming=Array.isArray(parsed)?parsed:parsed.scripts;if(!Array.isArray(incoming))throw Error("Backup has no scripts array");for(const s of incoming)if(s&&typeof s.name==="string"&&typeof s.code==="string")scripts.unshift({id:uid(),name:s.name,code:s.code,updated:Date.now()});await persist();renderLibrary()}else{openTab({name:file.name,code:text});setView("editor")}$("saveState").textContent="Import complete — save to library"}catch(e){$("saveState").textContent="Import failed: "+e.message}}
+function checkScript(){setView("console");const out=$("consoleOutput");out.replaceChildren();const add=(s,type="good")=>{const p=document.createElement("p");p.className="console-line "+type;p.textContent=s;out.append(p)};const code=editorView?.state.doc.toString()||"";add("Lines: "+(code.match(/\n/g)||[]).length+1);add("Luau syntax highlighting is active.");add("This is an editor, not a Luau runtime. No code was executed.");}
+document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+$("menuBtn").onclick=()=>$("sidebar").classList.toggle("open");
+$("newBtn").onclick=newScript;$("libraryNew").onclick=()=>{newScript();setView("editor")};
+$("saveBtn").onclick=saveCurrent;$("scriptName").onchange=()=>{const t=activeTab();if(t){t.name=$("scriptName").value;renderTabs()}};
+$("copyBtn").onclick=async()=>{try{await navigator.clipboard.writeText(editorView?.state.doc.toString()||"");$("saveState").textContent="Copied"}catch{$("saveState").textContent="Clipboard unavailable"}};
+$("importBtn").onclick=()=>$("fileInput").click();$("fileInput").onchange=e=>{importFile(e.target.files[0]);e.target.value=""};
+$("exportBtn").onclick=exportCurrent;$("backupBtn").onclick=exportBackup;$("importLibraryBtn").onclick=()=>$("backupInput").click();$("backupInput").onchange=e=>{importFile(e.target.files[0]);e.target.value=""};
+$("clearConsole").onclick=()=>$("consoleOutput").replaceChildren();const check=document.createElement("button");check.className="quiet-btn";check.textContent="Check editor";check.onclick=checkScript;document.querySelector(".toolbar-right").prepend(check);
+await loadScripts();openTab({name:"NewScript.luau",code:starter});$("saveState").textContent="Local workspace ready";
