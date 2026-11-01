@@ -18,6 +18,9 @@ on:
       - 'sw.js'
       - 'package.json'
       - 'capacitor.config.json'
+      - 'native/**'
+      - 'scripts/**'
+      - 'src/plugins/**'
       - '.github/workflows/build-android.yml'
 
 permissions:
@@ -48,13 +51,22 @@ jobs:
       - name: Prepare web assets
         run: |
           mkdir -p www
-          cp index.html styles.css manifest.webmanifest sw.js www/\n          npm run build
+          cp index.html styles.css manifest.webmanifest sw.js www/
+          npm run build
 
       - name: Generate Android project
-        run: npx cap add android
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          else
+            echo "Android project already exists; reusing generated folder."
+          fi
 
       - name: Sync web application
         run: npx cap sync android
+
+      - name: Patch native plugins and manifest
+        run: node scripts/patch-native.js
 
       - name: Build debug APK
         working-directory: android
