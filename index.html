@@ -13,12 +13,13 @@
       <button class="nav-item active" data-view="editor"> <span>⌘</span> Editor</button>
       <button class="nav-item" data-view="library"><span>▤</span> Script library</button>
       <button class="nav-item" data-view="console"><span>⌁</span> Console</button>
+      <button class="nav-item" id="launchRobloxNav"><span>▶</span> Launch Roblox</button>
       <div class="side-bottom"><div class="status-dot"></div><span>Local workspace</span><small>v0.1.0</small></div>
     </aside>
     <main class="main">
       <header class="topbar"><button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button><div class="crumb">Workspace <span>/</span> <b id="pageName">Editor</b></div><div class="top-actions"><span class="save-state" id="saveState">All changes saved</span><button class="icon-btn" id="newBtn" title="New script">＋</button></div></header>
       <section class="view active" id="editorView">
-        <div class="welcome"><div><p class="eyebrow">YOUR CREATIVE WORKSPACE</p><h1>Luau <em>Editor</em></h1><p class="muted">Write, organise and prepare scripts for your own Roblox Studio experiences.</p></div><button class="primary" id="saveBtn">Save script <span>↗</span></button></div>
+        <div class="welcome"><div><p class="eyebrow">YOUR CREATIVE WORKSPACE</p><h1>Luau <em>Editor</em></h1><p class="muted">Write, organise and prepare scripts for your own Roblox Studio experiences.</p></div><div class="welcome-actions"><button class="quiet-btn" id="openInRobloxBtn">Open in Roblox</button><button class="primary" id="saveBtn">Save script <span>↗</span></button></div></div>
         <div class="editor-card">
           <div class="editor-toolbar"><div class="file-tab"><span class="file-icon">◇</span><input id="scriptName" value="NewScript.lua" aria-label="Script name"></div><div class="toolbar-right"><span class="language-tag">LUAU</span><button class="quiet-btn" id="copyBtn">Copy</button><button class="quiet-btn" id="importBtn">Import</button><button class="quiet-btn" id="exportBtn">Export</button><input id="fileInput" type="file" accept=".lua,.luau,.txt,.json" hidden><input id="backupInput" type="file" accept=".json" hidden></div></div>
           <div id="tabBar" class="tab-bar" role="tablist" aria-label="Open scripts"></div><div id="codeEditor" class="code-editor" aria-label="Luau code editor"></div>
