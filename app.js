@@ -6,7 +6,7 @@ import {luau} from "@fazelstudio/codemirror-lang-luau";
 import {autocompletion} from "@codemirror/autocomplete";
 import {Filesystem, Directory, Encoding} from "@capacitor/filesystem";
 import {Capacitor} from "@capacitor/core";
-import {SafExport} from "./src/plugins/native";
+import {SafExport, RobloxLauncher} from "./src/plugins/native";
 
 const $=id=>document.getElementById(id);
 const STORAGE_KEY="deltaLabScriptsV2";
@@ -51,13 +51,35 @@ function closeTab(id){const i=tabs.findIndex(t=>t.id===id);if(i<0)return;tabs.sp
 function newScript(){openTab({name:"NewScript.luau",code:starter});$("saveState").textContent="New tab"}
 function saveCurrent(){const t=activeTab();if(!t)return; t.name=$("scriptName").value.trim()||"Untitled.luau";t.code=editorView.state.doc.toString();let item=scripts.find(s=>s.id===t.scriptId);if(!item){item={id:uid(),name:t.name,code:t.code,updated:Date.now()};scripts.unshift(item);t.scriptId=item.id}else Object.assign(item,{name:t.name,code:t.code,updated:Date.now()});persist();renderLibrary();renderTabs()}
 function setView(view){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(view+"View").classList.add("active");document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("pageName").textContent=view==="editor"?"Editor":view==="library"?"Script library":"Console";$("sidebar").classList.remove("open");if(view==="library")renderLibrary()}
-function renderLibrary(){const host=$("scriptList");host.replaceChildren();if(!scripts.length){const empty=document.createElement("div");empty.className="empty";empty.textContent="No saved scripts yet. Create or import your first script.";host.append(empty);return}scripts.forEach(s=>{const row=document.createElement("div");row.className="script-row";const meta=document.createElement("div");meta.className="script-meta";const title=document.createElement("b");title.textContent=s.name;const sub=document.createElement("p");sub.textContent=(s.code.match(/\n/g)||[]).length+1+" lines";meta.append(title,sub);const open=document.createElement("button");open.textContent="Open";open.onclick=()=>{openTab(s);setView("editor")};const del=document.createElement("button");del.textContent="Delete";del.onclick=async()=>{if(!confirm("Delete "+s.name+"?"))return;scripts=scripts.filter(x=>x.id!==s.id);await persist();renderLibrary()};row.append(meta,open,del);host.append(row)})}
+
+async function launchRoblox(){
+ try{
+  const status=await RobloxLauncher.isInstalled();
+  if(!status.installed){alert("Roblox is not installed on this device. Install Roblox, then try again.");return false}
+  await RobloxLauncher.openApp();
+  $("saveState").textContent="Roblox opened";
+  return true;
+ }catch(e){alert("Could not check or open Roblox: "+(e.message||"unknown error"));return false}
+}
+async function openInRoblox(){
+ try{
+  const status=await RobloxLauncher.isInstalled();
+  if(!status.installed){alert("Roblox is not installed on this device. Install Roblox, then try again.");return}
+  const placeId=prompt("Enter the Roblox experience Place ID to open:");
+  if(placeId===null)return;
+  const clean=placeId.trim();
+  if(!/^\d+$/.test(clean)){alert("Enter a valid numeric Roblox Place ID.");return}
+  await RobloxLauncher.openPlace({placeId:clean});
+  $("saveState").textContent="Opening Roblox experience "+clean;
+ }catch(e){alert("Could not open Roblox experience: "+(e.message||"unknown error"))}
+}
+\nfunction renderLibrary(){const host=$("scriptList");host.replaceChildren();if(!scripts.length){const empty=document.createElement("div");empty.className="empty";empty.textContent="No saved scripts yet. Create or import your first script.";host.append(empty);return}scripts.forEach(s=>{const row=document.createElement("div");row.className="script-row";const meta=document.createElement("div");meta.className="script-meta";const title=document.createElement("b");title.textContent=s.name;const sub=document.createElement("p");sub.textContent=(s.code.match(/\n/g)||[]).length+1+" lines";meta.append(title,sub);const open=document.createElement("button");open.textContent="Open";open.onclick=()=>{openTab(s);setView("editor")};const del=document.createElement("button");del.textContent="Delete";del.onclick=async()=>{if(!confirm("Delete "+s.name+"?"))return;scripts=scripts.filter(x=>x.id!==s.id);await persist();renderLibrary()};row.append(meta,open,del);host.append(row)})}
 function download(name,data,type="text/plain"){const a=document.createElement("a"),url=URL.createObjectURL(new Blob([data],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 async function exportCurrent(){const t=activeTab();if(!t)return;const content=editorView.state.doc.toString();if(native){try{const r=await SafExport.exportText({fileName:t.name,content});$("saveState").textContent="Exported to "+r.uri}catch(e){$("saveState").textContent="Export cancelled/failed: "+(e.message||"unknown error")}return}download(t.name,content,"text/plain;charset=utf-8")}
 async function exportBackup(){const content=JSON.stringify({format:"delta-lab-backup",version:2,scripts},null,2);if(native){try{const r=await SafExport.exportText({fileName:"delta-lab-backup.json",content});$("saveState").textContent="Backup exported to "+r.uri}catch(e){$("saveState").textContent="Backup export cancelled/failed: "+(e.message||"unknown error")}return}download("delta-lab-backup.json",content,"application/json")}
 async function importFile(file){if(!file)return;try{const text=await file.text();if(file.name.toLowerCase().endsWith(".json")){const parsed=JSON.parse(text),incoming=Array.isArray(parsed)?parsed:parsed.scripts;if(!Array.isArray(incoming))throw Error("Backup has no scripts array");for(const s of incoming)if(s&&typeof s.name==="string"&&typeof s.code==="string")scripts.unshift({id:uid(),name:s.name,code:s.code,updated:Date.now()});await persist();renderLibrary()}else{openTab({name:file.name,code:text});setView("editor")}$("saveState").textContent="Import complete — save to library"}catch(e){$("saveState").textContent="Import failed: "+e.message}}
 function checkScript(){setView("console");const out=$("consoleOutput");out.replaceChildren();const add=(s,type="good")=>{const p=document.createElement("p");p.className="console-line "+type;p.textContent=s;out.append(p)};const code=editorView?.state.doc.toString()||"";add("Lines: "+(code.match(/\n/g)||[]).length+1);add("Luau syntax highlighting is active.");add("This is an editor, not a Luau runtime. No code was executed.");}
-document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));\n$("launchRobloxNav").onclick=launchRoblox;\n$("openInRobloxBtn").onclick=openInRoblox;
 $("menuBtn").onclick=()=>$("sidebar").classList.toggle("open");
 $("newBtn").onclick=newScript;$("libraryNew").onclick=()=>{newScript();setView("editor")};
 $("saveBtn").onclick=saveCurrent;$("scriptName").onchange=()=>{const t=activeTab();if(t){t.name=$("scriptName").value;renderTabs()}};
