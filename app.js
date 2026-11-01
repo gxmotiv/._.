@@ -1,7 +1,8 @@
 import {EditorState} from "@codemirror/state";
 import {EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection} from "@codemirror/view";
 import {defaultKeymap, history, historyKeymap, indentWithTab} from "@codemirror/commands";
-import {StreamLanguage, syntaxHighlighting, defaultHighlightStyle} from "@codemirror/language";
+import {syntaxHighlighting, defaultHighlightStyle, foldGutter} from "@codemirror/language";
+import {luau} from "@fazelstudio/codemirror-lang-luau";
 import {autocompletion} from "@codemirror/autocomplete";
 import {Filesystem, Directory, Encoding} from "@capacitor/filesystem";
 import {Capacitor} from "@capacitor/core";
@@ -12,22 +13,6 @@ const native=Capacitor.isNativePlatform();
 let scripts=[],tabs=[],activeTabId=null,editorView=null;
 const uid=()=>Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
 const starter="-- Welcome to Delta Lab\n-- Write scripts for your own Roblox Studio experiences.\n\nlocal message = \"Hello, Roblox!\"\nprint(message)\n";
-const luau=StreamLanguage.define({
- startState:()=>({block:0}),
- token(stream,state){
-  if(stream.eatSpace())return null;
-  if(stream.match("--[[",false)){stream.match("--[[");state.block=1;return "comment"}
-  if(state.block){if(stream.skipTo("]]")){stream.match("]]");state.block=0}else stream.skipToEnd();return "comment"}
-  if(stream.match("--")){stream.skipToEnd();return "comment"}
-  if(stream.match(/"(?:\\.|[^"\\])*"?|'(?:\\.|[^'\\])*'?/))return "string";
-  if(stream.match(/\b(?:and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|continue|export|type)\b/))return "keyword";
-  if(stream.match(/\b(?:print|warn|error|assert|pairs|ipairs|next|select|tonumber|tostring|type|typeof|require|game|workspace|script|task|math|string|table|coroutine|Instance|Vector3|CFrame|Color3|UDim2|Enum)\b/))return "builtin";
-  if(stream.match(/\b\d+(?:\.\d+)?\b/))return "number";
-  if(stream.match(/[A-Za-z_][\w]*/))return "variableName";
-  if(stream.match(/==|~=|<=|>=|\.\.\.?|[-+*/%^#=<>]/))return "operator";
-  stream.next();return null;
- }
-});
 async function loadScripts(){
  try{
   if(native){const r=await Filesystem.readFile({path:"library/scripts.json",directory:Directory.Data,encoding:Encoding.UTF8});scripts=JSON.parse(r.data)||[]}
@@ -48,7 +33,7 @@ function mountEditor(){
  const tab=activeTab();if(!tab)return;
  if(editorView)editorView.destroy();
  editorView=new EditorView({state:EditorState.create({doc:tab.code,extensions:[
-  lineNumbers(),history(),drawSelection(),highlightActiveLine(),luau,syntaxHighlighting(defaultHighlightStyle),
+  lineNumbers(),foldGutter(),history(),drawSelection(),highlightActiveLine(),luau(),syntaxHighlighting(defaultHighlightStyle),
   autocompletion(),keymap.of([indentWithTab,...defaultKeymap,...historyKeymap]),
   EditorView.updateListener.of(u=>{if(u.docChanged){tab.code=u.state.doc.toString();$("saveState").textContent="Unsaved changes";updateLineCount()}}),
   EditorView.theme({ "&":{height:"55vh",minHeight:"300px",backgroundColor:"#0d1421",color:"#c7d6eb",fontSize:"12px"},".cm-scroller":{overflow:"auto",fontFamily:"ui-monospace,monospace",lineHeight:"1.8"},".cm-gutters":{backgroundColor:"#0d1421",color:"#64748b",border:"none"},".cm-activeLine":{backgroundColor:"#172235"},".cm-activeLineGutter":{backgroundColor:"#172235"}})
