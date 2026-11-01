@@ -21,13 +21,13 @@
         <div class="welcome"><div><p class="eyebrow">YOUR CREATIVE WORKSPACE</p><h1>Luau <em>Editor</em></h1><p class="muted">Write, organise and prepare scripts for your own Roblox Studio experiences.</p></div><button class="primary" id="saveBtn">Save script <span>↗</span></button></div>
         <div class="editor-card">
           <div class="editor-toolbar"><div class="file-tab"><span class="file-icon">◇</span><input id="scriptName" value="NewScript.lua" aria-label="Script name"></div><div class="toolbar-right"><span class="language-tag">LUAU</span><button class="quiet-btn" id="copyBtn">Copy</button><button class="quiet-btn" id="importBtn">Import</button><button class="quiet-btn" id="exportBtn">Export</button><input id="fileInput" type="file" accept=".lua,.luau,.txt,.json" hidden><input id="backupInput" type="file" accept=".json" hidden></div></div>
-          <textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Luau code editor" placeholder="-- Start writing your Luau script here...">-- Welcome to Delta Lab
+          <div id="tabBar" class="tab-bar" role="tablist" aria-label="Open scripts"></div><div id="codeEditor" class="code-editor" aria-label="Luau code editor"></div><textarea id="codeFallback" hidden></textarea><!---- Welcome to Delta Lab
 -- Write scripts for your own Roblox Studio projects.
 
 local message = "Hello, Roblox!"
 
 print(message)
-</textarea>
+-->
           <div class="editor-footer"><span>Ln <b id="lineCount">1</b> · UTF-8</span><span>Luau · Local editor</span></div>
         </div>
         <div class="below-grid"><article class="info-card"><div class="card-icon">⌘</div><div><b>Studio workflow</b><p>Copy your code into your own Roblox Studio experience to test it.</p></div></article><article class="info-card"><div class="card-icon">◈</div><div><b>Private by default</b><p>Your saved scripts stay in this browser on this device.</p></div></article></div>
@@ -37,5 +37,5 @@ print(message)
       <footer>DELTA LAB <span>·</span> Built for learning Luau and Roblox Studio development</footer>
     </main>
   </div>
-  <script src="app.js"></script><script>if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
+  <script type="module" src="app.bundle.js"></script><script>if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
 </body></html>
