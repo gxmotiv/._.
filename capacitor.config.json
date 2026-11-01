@@ -1,8 +1,7 @@
 {
   "appId": "com.gxmotiv.deltalab",
   "appName": "Delta Lab",
-  "webDir": ".",
-  "bundledWebRuntime": false,
+  "webDir": "www",
   "android": {
     "allowMixedContent": false
   }
