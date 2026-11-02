@@ -7,6 +7,7 @@ import {autocompletion} from "@codemirror/autocomplete";
 import {Filesystem, Directory, Encoding} from "@capacitor/filesystem";
 import {Capacitor} from "@capacitor/core";
 import {SafExport, RobloxLauncher} from "./src/plugins/native";
+import {Overlay} from "./src/plugins/overlay";
 
 const $=id=>document.getElementById(id);
 const STORAGE_KEY="deltaLabScriptsV2";
@@ -50,8 +51,43 @@ function openTab(script){if(activeTab()&&editorView)activeTab().code=editorView.
 function closeTab(id){const i=tabs.findIndex(t=>t.id===id);if(i<0)return;tabs.splice(i,1);if(activeTabId===id)activeTabId=tabs[Math.max(0,i-1)]?.id||null;if(activeTab()){renderTabs();mountEditor();$("scriptName").value=activeTab().name}else{if(editorView){editorView.destroy();editorView=null}$("codeEditor").replaceChildren();renderTabs()}}
 function newScript(){openTab({name:"NewScript.luau",code:starter});$("saveState").textContent="New tab"}
 function saveCurrent(){const t=activeTab();if(!t)return; t.name=$("scriptName").value.trim()||"Untitled.luau";t.code=editorView.state.doc.toString();let item=scripts.find(s=>s.id===t.scriptId);if(!item){item={id:uid(),name:t.name,code:t.code,updated:Date.now()};scripts.unshift(item);t.scriptId=item.id}else Object.assign(item,{name:t.name,code:t.code,updated:Date.now()});persist();renderLibrary();renderTabs()}
-function setView(view){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(view+"View").classList.add("active");document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("pageName").textContent=view==="editor"?"Editor":view==="library"?"Script library":"Console";$("sidebar").classList.remove("open");if(view==="library")renderLibrary()}
+function setView(view){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(view+"View").classList.add("active");document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("pageName").textContent=view==="editor"?"Editor":view==="library"?"Script library":view==="settings"?"Settings":"Console";$("sidebar").classList.remove("open");if(view==="library")renderLibrary()}
 
+let overlayEnablePending=false;
+async function refreshOverlayPermission(){
+ const status=$("overlayStatus"), toggle=$("overlayToggle");
+ if(!native){toggle.disabled=true;status.textContent="Floating Overlay is available in the Android app only.";return false}
+ try{
+  const result=await Overlay.checkPermission();
+  status.textContent=result.granted?"Permission granted. The floating Δ button can appear above other apps.":"Permission needed. Turn on Display over other apps for Delta Lab.";
+  return result.granted;
+ }catch(e){status.textContent="Could not check permission: "+(e.message||"unknown error");return false}
+}
+async function enableOverlay(){
+ if(!native){$("overlayToggle").checked=false;$("overlayStatus").textContent="Install the Android app to use Floating Overlay.";return}
+ try{
+  const before=await Overlay.checkPermission();
+  if(!before.granted){
+   overlayEnablePending=true;
+   $("overlayStatus").textContent="Opening Android permission settings… Return here after allowing Display over other apps.";
+   await Overlay.requestPermission();
+   const after=await Overlay.checkPermission();
+   if(!after.granted)return;
+  }
+  overlayEnablePending=false;
+  await Overlay.showOverlay();
+  $("overlayStatus").textContent="Floating Overlay is on. Tap Δ to return to Delta Lab.";
+ }catch(e){
+  overlayEnablePending=false;
+  $("overlayToggle").checked=false;
+  $("overlayStatus").textContent="Could not enable overlay: "+(e.message||"unknown error");
+ }
+}
+async function disableOverlay(){
+ overlayEnablePending=false;
+ try{if(native)await Overlay.hideOverlay();$("overlayStatus").textContent="Floating Overlay is off."}
+ catch(e){$("overlayStatus").textContent="Could not hide overlay: "+(e.message||"unknown error")}
+}
 async function launchRoblox(){
  try{
   const status=await RobloxLauncher.isInstalled();
@@ -79,7 +115,7 @@ async function exportCurrent(){const t=activeTab();if(!t)return;const content=ed
 async function exportBackup(){const content=JSON.stringify({format:"delta-lab-backup",version:2,scripts},null,2);if(native){try{const r=await SafExport.exportText({fileName:"delta-lab-backup.json",content});$("saveState").textContent="Backup exported to "+r.uri}catch(e){$("saveState").textContent="Backup export cancelled/failed: "+(e.message||"unknown error")}return}download("delta-lab-backup.json",content,"application/json")}
 async function importFile(file){if(!file)return;try{const text=await file.text();if(file.name.toLowerCase().endsWith(".json")){const parsed=JSON.parse(text),incoming=Array.isArray(parsed)?parsed:parsed.scripts;if(!Array.isArray(incoming))throw Error("Backup has no scripts array");for(const s of incoming)if(s&&typeof s.name==="string"&&typeof s.code==="string")scripts.unshift({id:uid(),name:s.name,code:s.code,updated:Date.now()});await persist();renderLibrary()}else{openTab({name:file.name,code:text});setView("editor")}$("saveState").textContent="Import complete — save to library"}catch(e){$("saveState").textContent="Import failed: "+e.message}}
 function checkScript(){setView("console");const out=$("consoleOutput");out.replaceChildren();const add=(s,type="good")=>{const p=document.createElement("p");p.className="console-line "+type;p.textContent=s;out.append(p)};const code=editorView?.state.doc.toString()||"";add("Lines: "+(code.match(/\n/g)||[]).length+1);add("Luau syntax highlighting is active.");add("This is an editor, not a Luau runtime. No code was executed.");}
-document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));$("launchRobloxNav").onclick=launchRoblox;$("openInRobloxBtn").onclick=openInRoblox;
+document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));$("launchRobloxNav").onclick=launchRoblox;$("openInRobloxBtn").onclick=openInRoblox;\n$("overlayToggle").addEventListener("change",e=>e.target.checked?enableOverlay():disableOverlay());\ndocument.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&overlayEnablePending){const granted=await refreshOverlayPermission();if(granted){$("overlayToggle").checked=true;await enableOverlay()}else{$("overlayToggle").checked=false;overlayEnablePending=false}}});
 $("menuBtn").onclick=()=>$("sidebar").classList.toggle("open");
 $("newBtn").onclick=newScript;$("libraryNew").onclick=()=>{newScript();setView("editor")};
 $("saveBtn").onclick=saveCurrent;$("scriptName").onchange=()=>{const t=activeTab();if(t){t.name=$("scriptName").value;renderTabs()}};
@@ -87,4 +123,4 @@ $("copyBtn").onclick=async()=>{try{await navigator.clipboard.writeText(editorVie
 $("importBtn").onclick=()=>$("fileInput").click();$("fileInput").onchange=e=>{importFile(e.target.files[0]);e.target.value=""};
 $("exportBtn").onclick=exportCurrent;$("backupBtn").onclick=exportBackup;$("importLibraryBtn").onclick=()=>$("backupInput").click();$("backupInput").onchange=e=>{importFile(e.target.files[0]);e.target.value=""};
 $("clearConsole").onclick=()=>$("consoleOutput").replaceChildren();const check=document.createElement("button");check.className="quiet-btn";check.textContent="Check editor";check.onclick=checkScript;document.querySelector(".toolbar-right").prepend(check);
-await loadScripts();openTab({name:"NewScript.luau",code:starter});$("saveState").textContent="Local workspace ready";
+await loadScripts();openTab({name:"NewScript.luau",code:starter});await refreshOverlayPermission();$("saveState").textContent="Local workspace ready";
