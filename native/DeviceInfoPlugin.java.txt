@@ -1,0 +1,25 @@
+package __APP_PACKAGE__;
+
+import android.os.Build;
+import android.provider.Settings;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+
+@CapacitorPlugin(name = "DeviceInfo")
+public class DeviceInfoPlugin extends Plugin {
+    @PluginMethod
+    public void getDeviceInfo(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("model", Build.MODEL == null ? "" : Build.MODEL);
+        result.put("manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
+        String androidId = Settings.Secure.getString(
+                getContext().getContentResolver(),
+                Settings.Secure.ANDROID_ID
+        );
+        result.put("androidId", androidId == null ? "" : androidId);
+        call.resolve(result);
+    }
+}
