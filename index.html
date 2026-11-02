@@ -37,6 +37,17 @@
           <label class="switch" for="overlayToggle"><input id="overlayToggle" type="checkbox" aria-label="Floating Overlay"><span class="switch-track"></span></label>
         </div>
         <p class="settings-note">Android will ask you to allow “Display over other apps”. Enable it for Delta Lab, then return to this app. You can turn the overlay off here at any time.</p>
+        <div class="settings-card device-info-link"><div class="settings-copy"><b>Device Info</b><p class="muted">View this device’s model, manufacturer and Android ID.</p></div><button class="quiet-btn" id="deviceInfoNav">Open Device Info</button></div>
+      </section>
+      <section class="view" id="device-infoView">
+        <div class="section-heading"><div><p class="eyebrow">ANDROID DEVICE DETAILS</p><h1>Device <em>Info</em></h1><p class="muted">Read-only information provided by Android. Delta Lab does not modify or spoof these values.</p></div><button class="quiet-btn" id="deviceInfoRefresh">Refresh</button></div>
+        <div class="device-info-card">
+          <div class="device-info-row"><span>Device Model</span><b id="deviceModel">Not loaded</b></div>
+          <div class="device-info-row"><span>Manufacturer</span><b id="deviceManufacturer">Not loaded</b></div>
+          <div class="device-info-row"><span>Android ID</span><b id="deviceAndroidId" class="device-id">Not loaded</b></div>
+          <small id="deviceInfoStatus" role="status">Open this screen to read device information.</small>
+        </div>
+        <p class="settings-note">Privacy note: Android ID is a device/app-scoped identifier. Avoid posting it publicly or sharing screenshots that show it.</p>
       </section>
       <footer>DELTA LAB <span>·</span> Built for learning Luau and Roblox Studio development</footer>
     </main>
