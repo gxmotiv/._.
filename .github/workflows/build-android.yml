@@ -80,6 +80,30 @@ jobs:
           console.log('[patch-native] idempotency verified: exactly one <queries> block after two runs.');
           NODE
 
+      - name: Set Android version code
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'android/app/build.gradle';
+          let gradle = fs.readFileSync(file, 'utf8');
+          const versionCode = Number(process.env.GITHUB_RUN_NUMBER);
+          if (!Number.isInteger(versionCode) || versionCode < 1) {
+            throw new Error('Invalid GitHub Actions run number for Android versionCode');
+          }
+          if (!/versionCode\\s+\\d+/.test(gradle)) {
+            throw new Error('Could not find versionCode in android/app/build.gradle');
+          }
+          gradle = gradle.replace(/versionCode\\s+\\d+/, 'versionCode ' + versionCode);
+          fs.writeFileSync(file, gradle);
+          console.log('Set Android versionCode to ' + versionCode);
+          NODE
+
+      - name: Cache Debug Keystore
+        uses: actions/cache@v3
+        with:
+          path: ~/.android/debug.keystore
+          key: ${{ runner.os }}-debug-keystore
+
       - name: Build debug APK
         working-directory: android
         run: |
