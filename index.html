@@ -14,6 +14,7 @@
       <button class="nav-item" data-view="library"><span>▤</span> Script library</button>
       <button class="nav-item" data-view="console"><span>⌁</span> Console</button>
       <button class="nav-item" id="launchRobloxNav"><span>▶</span> Launch Roblox</button>
+      <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
       <div class="side-bottom"><div class="status-dot"></div><span>Local workspace</span><small>v0.1.0</small></div>
     </aside>
     <main class="main">
@@ -29,6 +30,14 @@
       </section>
       <section class="view" id="libraryView"><div class="section-heading"><div><p class="eyebrow">YOUR FILES</p><h1>Script <em>library</em></h1><p class="muted">Saved locally in this browser.</p></div><button class="primary" id="libraryNew">＋ New script</button></div><div class="library-actions"><button class="quiet-btn" id="backupBtn">Export backup</button><button class="quiet-btn" id="importLibraryBtn">Import backup</button></div><div id="scriptList" class="script-list"></div></section>
       <section class="view" id="consoleView"><div class="section-heading"><div><p class="eyebrow">DEVELOPMENT OUTPUT</p><h1>Test <em>console</em></h1><p class="muted">Basic editor checks. This is not a Roblox runtime.</p></div><button class="quiet-btn" id="clearConsole">Clear output</button></div><div class="console-card"><div class="console-head"><span class="status-dot"></span> LOCAL CHECKS <span class="muted">· no code execution</span></div><div id="consoleOutput" class="console-output"><p class="console-muted">Ready. Choose “Check script” in the editor to inspect basic formatting.</p></div></div></section>
+      <section class="view" id="settingsView">
+        <div class="section-heading"><div><p class="eyebrow">APP PREFERENCES</p><h1>App <em>settings</em></h1><p class="muted">Manage Android-only features on this device.</p></div></div>
+        <div class="settings-card">
+          <div class="settings-copy"><b>Floating Overlay</b><p class="muted">Show a small Δ button above other apps. Tap it while playing Roblox to return to Delta Lab.</p><small id="overlayStatus" role="status">Checking overlay permission…</small></div>
+          <label class="switch" for="overlayToggle"><input id="overlayToggle" type="checkbox" aria-label="Floating Overlay"><span class="switch-track"></span></label>
+        </div>
+        <p class="settings-note">Android will ask you to allow “Display over other apps”. Enable it for Delta Lab, then return to this app. You can turn the overlay off here at any time.</p>
+      </section>
       <footer>DELTA LAB <span>·</span> Built for learning Luau and Roblox Studio development</footer>
     </main>
   </div>
