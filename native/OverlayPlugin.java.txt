@@ -69,10 +69,45 @@ public class OverlayPlugin extends Plugin {
             params.x = 100;
             params.y = 100;
 
-            floatingButton.setOnClickListener(v -> {
-                Intent intent = new Intent(getContext(), getActivity().getClass());
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                getContext().startActivity(intent);
+            floatingButton.setOnTouchListener(new android.view.View.OnTouchListener() {
+                private int initialX;
+                private int initialY;
+                private float initialTouchX;
+                private float initialTouchY;
+                private boolean isDragging = false;
+
+                @Override
+                public boolean onTouch(android.view.View v, android.view.MotionEvent event) {
+                    switch (event.getAction()) {
+                        case android.view.MotionEvent.ACTION_DOWN:
+                            initialX = params.x;
+                            initialY = params.y;
+                            initialTouchX = event.getRawX();
+                            initialTouchY = event.getRawY();
+                            isDragging = false;
+                            return true; // Consume DOWN so MOVE and UP are delivered for dragging/tap handling.
+                        case android.view.MotionEvent.ACTION_MOVE:
+                            if (Math.abs(event.getRawX() - initialTouchX) > 10 ||
+                                    Math.abs(event.getRawY() - initialTouchY) > 10) {
+                                isDragging = true;
+                                params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                                params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                                windowManager.updateViewLayout(floatingButton, params);
+                            }
+                            return true;
+                        case android.view.MotionEvent.ACTION_UP:
+                            if (!isDragging) {
+                                Intent intent = new Intent(getContext(), getActivity().getClass());
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                                getContext().startActivity(intent);
+                            }
+                            return true;
+                        case android.view.MotionEvent.ACTION_CANCEL:
+                            return true;
+                    }
+                    return true;
+                }
             });
 
             windowManager.addView(floatingButton, params);
