@@ -8,6 +8,7 @@ import {Filesystem, Directory, Encoding} from "@capacitor/filesystem";
 import {Capacitor} from "@capacitor/core";
 import {SafExport, RobloxLauncher} from "./src/plugins/native";
 import {Overlay} from "./src/plugins/overlay";
+import {DeviceInfo} from "./src/plugins/device-info";
 
 const $=id=>document.getElementById(id);
 const STORAGE_KEY="deltaLabScriptsV2";
@@ -51,7 +52,20 @@ function openTab(script){if(activeTab()&&editorView)activeTab().code=editorView.
 function closeTab(id){const i=tabs.findIndex(t=>t.id===id);if(i<0)return;tabs.splice(i,1);if(activeTabId===id)activeTabId=tabs[Math.max(0,i-1)]?.id||null;if(activeTab()){renderTabs();mountEditor();$("scriptName").value=activeTab().name}else{if(editorView){editorView.destroy();editorView=null}$("codeEditor").replaceChildren();renderTabs()}}
 function newScript(){openTab({name:"NewScript.luau",code:starter});$("saveState").textContent="New tab"}
 function saveCurrent(){const t=activeTab();if(!t)return; t.name=$("scriptName").value.trim()||"Untitled.luau";t.code=editorView.state.doc.toString();let item=scripts.find(s=>s.id===t.scriptId);if(!item){item={id:uid(),name:t.name,code:t.code,updated:Date.now()};scripts.unshift(item);t.scriptId=item.id}else Object.assign(item,{name:t.name,code:t.code,updated:Date.now()});persist();renderLibrary();renderTabs()}
-function setView(view){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(view+"View").classList.add("active");document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("pageName").textContent=view==="editor"?"Editor":view==="library"?"Script library":view==="settings"?"Settings":"Console";$("sidebar").classList.remove("open");if(view==="library")renderLibrary()}
+function setView(view){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$(view+"View").classList.add("active");document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("pageName").textContent=view==="editor"?"Editor":view==="library"?"Script library":view==="settings"?"Settings":view==="device-info"?"Device Info":"Console";$("sidebar").classList.remove("open");if(view==="library")renderLibrary()}
+
+async function loadDeviceInfo(){
+ const status=$("deviceInfoStatus");
+ if(!native){status.textContent="Device Info is available in the installed Android app only.";return}
+ status.textContent="Reading device information…";
+ try{
+  const info=await DeviceInfo.getDeviceInfo();
+  $("deviceModel").textContent=info.model||"Unavailable";
+  $("deviceManufacturer").textContent=info.manufacturer||"Unavailable";
+  $("deviceAndroidId").textContent=info.androidId||"Unavailable";
+  status.textContent="Read directly from Android. Nothing is changed or spoofed.";
+ }catch(e){status.textContent="Could not read device information: "+(e.message||"unknown error")}
+}
 
 let overlayEnablePending=false;
 async function refreshOverlayPermission(){
@@ -117,6 +131,8 @@ async function importFile(file){if(!file)return;try{const text=await file.text()
 function checkScript(){setView("console");const out=$("consoleOutput");out.replaceChildren();const add=(s,type="good")=>{const p=document.createElement("p");p.className="console-line "+type;p.textContent=s;out.append(p)};const code=editorView?.state.doc.toString()||"";add("Lines: "+(code.match(/\n/g)||[]).length+1);add("Luau syntax highlighting is active.");add("This is an editor, not a Luau runtime. No code was executed.");}
 document.querySelectorAll(".nav-item[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));$("launchRobloxNav").onclick=launchRoblox;$("openInRobloxBtn").onclick=openInRoblox;
 $("overlayToggle").addEventListener("change",e=>e.target.checked?enableOverlay():disableOverlay());
+$("deviceInfoNav").addEventListener("click",()=>{setView("device-info");loadDeviceInfo()});
+$("deviceInfoRefresh").addEventListener("click",loadDeviceInfo);
 document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&overlayEnablePending){const granted=await refreshOverlayPermission();if(granted){$("overlayToggle").checked=true;await enableOverlay()}else{$("overlayToggle").checked=false;overlayEnablePending=false}}});
 $("menuBtn").onclick=()=>$("sidebar").classList.toggle("open");
 $("newBtn").onclick=newScript;$("libraryNew").onclick=()=>{newScript();setView("editor")};
