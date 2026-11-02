@@ -41,6 +41,7 @@ function install(tplName, destName) {
 
 install('SafExportPlugin.java.txt', 'SafExportPlugin.java');
 install('RobloxLauncherPlugin.java.txt', 'RobloxLauncherPlugin.java');
+install('OverlayPlugin.java.txt', 'OverlayPlugin.java');
 install('MainActivity.java.txt', 'MainActivity.java');
 
 const ktMain = path.join(javaDir, 'MainActivity.kt');
@@ -55,6 +56,19 @@ if (!fs.existsSync(manifest)) {
   process.exit(1);
 }
 let xml = fs.readFileSync(manifest, 'utf8');
+const overlayPermission = '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />';
+if (!xml.includes('android.permission.SYSTEM_ALERT_WINDOW')) {
+  const appTag = xml.indexOf('<application');
+  if (appTag === -1) {
+    console.error('[patch-native] <application> tag not found while adding overlay permission');
+    process.exit(1);
+  }
+  xml = xml.slice(0, appTag) + '    ' + overlayPermission + '\\n    ' + xml.slice(appTag);
+  fs.writeFileSync(manifest, xml, 'utf8');
+  console.log('[patch-native] added SYSTEM_ALERT_WINDOW permission');
+} else {
+  console.log('[patch-native] SYSTEM_ALERT_WINDOW permission already present - skipping.');
+}
 if (xml.includes('com.roblox.client')) {
   console.log('[patch-native] Roblox <queries> already present - skipping.');
 } else {
