@@ -11,3 +11,12 @@
 .settings-note{max-width:720px;margin-top:13px;color:var(--muted);font-size:10px;line-height:1.7}
 .switch{position:relative;display:inline-flex;flex:0 0 auto;align-items:center;cursor:pointer}.switch input{position:absolute;opacity:0;width:1px;height:1px}.switch-track{width:48px;height:27px;border-radius:20px;background:#344155;border:1px solid #526078;transition:background .2s;position:relative}.switch-track:after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#dbe4f3;transition:transform .2s}.switch input:checked+.switch-track{background:#6554d5;border-color:#8c7bff}.switch input:checked+.switch-track:after{transform:translateX(21px);background:#fff}.switch input:focus-visible+.switch-track{outline:2px solid var(--cyan);outline-offset:3px}.switch input:disabled+.switch-track{opacity:.45;cursor:not-allowed}
 @media(max-width:520px){.settings-card{padding:15px}.settings-copy{max-width:calc(100% - 60px)}}
+
+.device-info-link{margin-top:14px;max-width:720px}
+.device-info-card{max-width:720px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px 18px}
+.device-info-row{display:flex;justify-content:space-between;gap:18px;padding:17px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.device-info-row span{font-size:11px;color:var(--muted);flex:0 0 125px}
+.device-info-row b{font-size:12px;text-align:right;overflow-wrap:anywhere;min-width:0}
+.device-info-row .device-id{font:11px ui-monospace,monospace;max-width:65%}
+.device-info-card small{display:block;padding:14px 0;color:#8f9db2;font-size:10px;line-height:1.6}
+@media(max-width:520px){.device-info-card{padding:4px 13px}.device-info-row{gap:10px}.device-info-row span{flex-basis:100px}.device-info-row b{font-size:11px}}
