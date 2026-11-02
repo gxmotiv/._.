@@ -101,7 +101,9 @@ public class OverlayPlugin extends Plugin {
                                         .getLaunchIntentForPackage(getContext().getPackageName());
                                 if (intent != null) {
                                     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
-                                            android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                                            android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT |
+                                            android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                                            android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
                                     getContext().startActivity(intent);
                                 }
                             }
