@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SafExportPlugin.class);
         registerPlugin(RobloxLauncherPlugin.class);
+        registerPlugin(OverlayPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
