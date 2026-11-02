@@ -85,7 +85,7 @@ public class OverlayPlugin extends Plugin {
                             initialTouchX = event.getRawX();
                             initialTouchY = event.getRawY();
                             isDragging = false;
-                            return true; // Consume DOWN so MOVE and UP are delivered for dragging/tap handling.
+                            return true;
                         case android.view.MotionEvent.ACTION_MOVE:
                             if (Math.abs(event.getRawX() - initialTouchX) > 10 ||
                                     Math.abs(event.getRawY() - initialTouchY) > 10) {
@@ -97,10 +97,13 @@ public class OverlayPlugin extends Plugin {
                             return true;
                         case android.view.MotionEvent.ACTION_UP:
                             if (!isDragging) {
-                                Intent intent = new Intent(getContext(), getActivity().getClass());
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                                getContext().startActivity(intent);
+                                android.content.Intent intent = getContext().getPackageManager()
+                                        .getLaunchIntentForPackage(getContext().getPackageName());
+                                if (intent != null) {
+                                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
+                                            android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                                    getContext().startActivity(intent);
+                                }
                             }
                             return true;
                         case android.view.MotionEvent.ACTION_CANCEL:
