@@ -86,19 +86,11 @@ jobs:
           sed -i "s/versionCode [0-9]*/versionCode ${GITHUB_RUN_NUMBER}/" app/build.gradle
           grep -q "versionCode ${GITHUB_RUN_NUMBER}" app/build.gradle
 
-      - name: Prepare Debug Keystore
+      - name: Generate Debug Keystore
         run: |
-          mkdir -p "$HOME/.android"
-          if [ ! -f "$HOME/.android/debug.keystore" ]; then
-            keytool -genkeypair -v \
-              -keystore "$HOME/.android/debug.keystore" \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
+          if [ ! -f ~/.android/debug.keystore ]; then
+            mkdir -p ~/.android
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
       - name: Cache Debug Keystore
