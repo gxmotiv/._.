@@ -42,6 +42,7 @@ function install(tplName, destName) {
 install('SafExportPlugin.java.txt', 'SafExportPlugin.java');
 install('RobloxLauncherPlugin.java.txt', 'RobloxLauncherPlugin.java');
 install('OverlayPlugin.java.txt', 'OverlayPlugin.java');
+install('DeviceInfoPlugin.java.txt', 'DeviceInfoPlugin.java');
 install('MainActivity.java.txt', 'MainActivity.java');
 
 const ktMain = path.join(javaDir, 'MainActivity.kt');
