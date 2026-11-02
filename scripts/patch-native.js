@@ -63,7 +63,7 @@ if (!xml.includes('android.permission.SYSTEM_ALERT_WINDOW')) {
     console.error('[patch-native] <application> tag not found while adding overlay permission');
     process.exit(1);
   }
-  xml = xml.slice(0, appTag) + '    ' + overlayPermission + '\\n    ' + xml.slice(appTag);
+  xml = xml.slice(0, appTag) + '    ' + overlayPermission + '\n    ' + xml.slice(appTag);
   fs.writeFileSync(manifest, xml, 'utf8');
   console.log('[patch-native] added SYSTEM_ALERT_WINDOW permission');
 } else {
