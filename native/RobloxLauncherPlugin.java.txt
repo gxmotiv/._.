@@ -1,0 +1,62 @@
+package __APP_PACKAGE__;
+
+import android.content.Intent;
+import android.net.Uri;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+
+@CapacitorPlugin(name = "RobloxLauncher")
+public class RobloxLauncherPlugin extends Plugin {
+
+    private static final String ROBLOX_PACKAGE = "com.roblox.client";
+
+    @PluginMethod
+    public void isInstalled(PluginCall call) {
+        Intent launch = getContext().getPackageManager().getLaunchIntentForPackage(ROBLOX_PACKAGE);
+        JSObject ret = new JSObject();
+        ret.put("installed", launch != null);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void openApp(PluginCall call) {
+        Intent launch = getContext().getPackageManager().getLaunchIntentForPackage(ROBLOX_PACKAGE);
+        if (launch == null) {
+            call.reject("Roblox not installed or not visible. Verify <queries> in AndroidManifest.xml.");
+            return;
+        }
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(launch);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Failed to open Roblox: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void openPlace(PluginCall call) {
+        String placeId = call.getString("placeId");
+        if (placeId == null || placeId.isEmpty()) {
+            call.reject("placeId is required");
+            return;
+        }
+        Uri uri = Uri.parse("roblox://placeId=" + placeId);
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setPackage(ROBLOX_PACKAGE);
+        if (intent.resolveActivity(getContext().getPackageManager()) == null) {
+            call.reject("No Roblox activity handles roblox:// - check <queries> for the scheme entry.");
+            return;
+        }
+        try {
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Failed to open place: " + e.getMessage());
+        }
+    }
+}

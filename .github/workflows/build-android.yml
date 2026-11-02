@@ -2,10 +2,14 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
       - feature/android-apk-build
+      - feature/codemirror-luau-tabs
     paths:
       - 'index.html'
       - 'styles.css'
@@ -14,6 +18,9 @@ on:
       - 'sw.js'
       - 'package.json'
       - 'capacitor.config.json'
+      - 'native/**'
+      - 'scripts/**'
+      - 'src/plugins/**'
       - '.github/workflows/build-android.yml'
 
 permissions:
@@ -44,13 +51,53 @@ jobs:
       - name: Prepare web assets
         run: |
           mkdir -p www
-          cp index.html styles.css app.js manifest.webmanifest sw.js www/
+          cp index.html styles.css manifest.webmanifest sw.js www/
+          npm run build
 
       - name: Generate Android project
-        run: npx cap add android
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          else
+            echo "Android project already exists; reusing generated folder."
+          fi
 
       - name: Sync web application
         run: npx cap sync android
+
+      - name: Patch native plugins and manifest
+        run: |
+          node scripts/patch-native.js
+          node scripts/patch-native.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const xml = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+          const queries = (xml.match(/<queries>/g) || []).length;
+          if (queries !== 1 || !xml.includes('android:name="com.roblox.client"') || !xml.includes('android:scheme="roblox"')) {
+            console.error('[patch-native] idempotency verification failed: queries=' + queries);
+            process.exit(1);
+          }
+          console.log('[patch-native] idempotency verified: exactly one <queries> block after two runs.');
+          NODE
+
+      - name: Set Android version code
+        working-directory: android
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${GITHUB_RUN_NUMBER}/" app/build.gradle
+          grep -q "versionCode ${GITHUB_RUN_NUMBER}" app/build.gradle
+
+      - name: Generate Debug Keystore
+        run: |
+          if [ ! -f ~/.android/debug.keystore ]; then
+            mkdir -p ~/.android
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Cache Debug Keystore
+        uses: actions/cache@v3
+        with:
+          path: ~/.android/debug.keystore
+          key: ${{ runner.os }}-debug-keystore
 
       - name: Build debug APK
         working-directory: android

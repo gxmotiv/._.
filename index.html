@@ -13,29 +13,44 @@
       <button class="nav-item active" data-view="editor"> <span>⌘</span> Editor</button>
       <button class="nav-item" data-view="library"><span>▤</span> Script library</button>
       <button class="nav-item" data-view="console"><span>⌁</span> Console</button>
+      <button class="nav-item" id="launchRobloxNav"><span>▶</span> Launch Roblox</button>
+      <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
       <div class="side-bottom"><div class="status-dot"></div><span>Local workspace</span><small>v0.1.0</small></div>
     </aside>
     <main class="main">
       <header class="topbar"><button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button><div class="crumb">Workspace <span>/</span> <b id="pageName">Editor</b></div><div class="top-actions"><span class="save-state" id="saveState">All changes saved</span><button class="icon-btn" id="newBtn" title="New script">＋</button></div></header>
       <section class="view active" id="editorView">
-        <div class="welcome"><div><p class="eyebrow">YOUR CREATIVE WORKSPACE</p><h1>Luau <em>Editor</em></h1><p class="muted">Write, organise and prepare scripts for your own Roblox Studio experiences.</p></div><button class="primary" id="saveBtn">Save script <span>↗</span></button></div>
+        <div class="welcome"><div><p class="eyebrow">YOUR CREATIVE WORKSPACE</p><h1>Luau <em>Editor</em></h1><p class="muted">Write, organise and prepare scripts for your own Roblox Studio experiences.</p></div><div class="welcome-actions"><button class="quiet-btn" id="openInRobloxBtn">Open in Roblox</button><button class="primary" id="saveBtn">Save script <span>↗</span></button></div></div>
         <div class="editor-card">
-          <div class="editor-toolbar"><div class="file-tab"><span class="file-icon">◇</span><input id="scriptName" value="NewScript.lua" aria-label="Script name"></div><div class="toolbar-right"><span class="language-tag">LUAU</span><button class="quiet-btn" id="copyBtn">Copy</button></div></div>
-          <textarea id="codeEditor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Luau code editor" placeholder="-- Start writing your Luau script here...">-- Welcome to Delta Lab
--- Write scripts for your own Roblox Studio projects.
-
-local message = "Hello, Roblox!"
-
-print(message)
-</textarea>
+          <div class="editor-toolbar"><div class="file-tab"><span class="file-icon">◇</span><input id="scriptName" value="NewScript.lua" aria-label="Script name"></div><div class="toolbar-right"><span class="language-tag">LUAU</span><button class="quiet-btn" id="copyBtn">Copy</button><button class="quiet-btn" id="importBtn">Import</button><button class="quiet-btn" id="exportBtn">Export</button><input id="fileInput" type="file" accept=".lua,.luau,.txt,.json" hidden><input id="backupInput" type="file" accept=".json" hidden></div></div>
+          <div id="tabBar" class="tab-bar" role="tablist" aria-label="Open scripts"></div><div id="codeEditor" class="code-editor" aria-label="Luau code editor"></div>
           <div class="editor-footer"><span>Ln <b id="lineCount">1</b> · UTF-8</span><span>Luau · Local editor</span></div>
         </div>
         <div class="below-grid"><article class="info-card"><div class="card-icon">⌘</div><div><b>Studio workflow</b><p>Copy your code into your own Roblox Studio experience to test it.</p></div></article><article class="info-card"><div class="card-icon">◈</div><div><b>Private by default</b><p>Your saved scripts stay in this browser on this device.</p></div></article></div>
       </section>
-      <section class="view" id="libraryView"><div class="section-heading"><div><p class="eyebrow">YOUR FILES</p><h1>Script <em>library</em></h1><p class="muted">Saved locally in this browser.</p></div><button class="primary" id="libraryNew">＋ New script</button></div><div id="scriptList" class="script-list"></div></section>
+      <section class="view" id="libraryView"><div class="section-heading"><div><p class="eyebrow">YOUR FILES</p><h1>Script <em>library</em></h1><p class="muted">Saved locally in this browser.</p></div><button class="primary" id="libraryNew">＋ New script</button></div><div class="library-actions"><button class="quiet-btn" id="backupBtn">Export backup</button><button class="quiet-btn" id="importLibraryBtn">Import backup</button></div><div id="scriptList" class="script-list"></div></section>
       <section class="view" id="consoleView"><div class="section-heading"><div><p class="eyebrow">DEVELOPMENT OUTPUT</p><h1>Test <em>console</em></h1><p class="muted">Basic editor checks. This is not a Roblox runtime.</p></div><button class="quiet-btn" id="clearConsole">Clear output</button></div><div class="console-card"><div class="console-head"><span class="status-dot"></span> LOCAL CHECKS <span class="muted">· no code execution</span></div><div id="consoleOutput" class="console-output"><p class="console-muted">Ready. Choose “Check script” in the editor to inspect basic formatting.</p></div></div></section>
+      <section class="view" id="settingsView">
+        <div class="section-heading"><div><p class="eyebrow">APP PREFERENCES</p><h1>App <em>settings</em></h1><p class="muted">Manage Android-only features on this device.</p></div></div>
+        <div class="settings-card">
+          <div class="settings-copy"><b>Floating Overlay</b><p class="muted">Show a small Δ button above other apps. Tap it while playing Roblox to return to Delta Lab.</p><small id="overlayStatus" role="status">Checking overlay permission…</small></div>
+          <label class="switch" for="overlayToggle"><input id="overlayToggle" type="checkbox" aria-label="Floating Overlay"><span class="switch-track"></span></label>
+        </div>
+        <p class="settings-note">Android will ask you to allow “Display over other apps”. Enable it for Delta Lab, then return to this app. You can turn the overlay off here at any time.</p>
+        <div class="settings-card device-info-link"><div class="settings-copy"><b>Device Info</b><p class="muted">View this device’s model, manufacturer and Android ID.</p></div><button class="quiet-btn" id="deviceInfoNav">Open Device Info</button></div>
+      </section>
+      <section class="view" id="device-infoView">
+        <div class="section-heading"><div><p class="eyebrow">ANDROID DEVICE DETAILS</p><h1>Device <em>Info</em></h1><p class="muted">Read-only information provided by Android. Delta Lab does not modify or spoof these values.</p></div><button class="quiet-btn" id="deviceInfoRefresh">Refresh</button></div>
+        <div class="device-info-card">
+          <div class="device-info-row"><span>Device Model</span><b id="deviceModel">Not loaded</b></div>
+          <div class="device-info-row"><span>Manufacturer</span><b id="deviceManufacturer">Not loaded</b></div>
+          <div class="device-info-row"><span>Android ID</span><b id="deviceAndroidId" class="device-id">Not loaded</b></div>
+          <small id="deviceInfoStatus" role="status">Open this screen to read device information.</small>
+        </div>
+        <p class="settings-note">Privacy note: Android ID is a device/app-scoped identifier. Avoid posting it publicly or sharing screenshots that show it.</p>
+      </section>
       <footer>DELTA LAB <span>·</span> Built for learning Luau and Roblox Studio development</footer>
     </main>
   </div>
-  <script src="app.js"></script><script>if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
+  <script type="module" src="app.bundle.js"></script><script>if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
 </body></html>
